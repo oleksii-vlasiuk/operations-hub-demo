@@ -1,4 +1,4 @@
-package com.oleksiivlasiuk.operationshubbackend.model;
+package com.oleksiivlasiuk.operationshubbackend.core.users;
 
 import jakarta.persistence.*;
 

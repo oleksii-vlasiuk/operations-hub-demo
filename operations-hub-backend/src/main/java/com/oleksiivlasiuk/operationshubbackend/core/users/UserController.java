@@ -1,7 +1,5 @@
-package com.oleksiivlasiuk.operationshubbackend.controller;
+package com.oleksiivlasiuk.operationshubbackend.core.users;
 
-import com.oleksiivlasiuk.operationshubbackend.model.User;
-import com.oleksiivlasiuk.operationshubbackend.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 

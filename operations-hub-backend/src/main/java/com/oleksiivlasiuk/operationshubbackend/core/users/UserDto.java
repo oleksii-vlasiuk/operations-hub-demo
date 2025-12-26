@@ -1,4 +1,4 @@
-package com.oleksiivlasiuk.operationshubbackend.dto;
+package com.oleksiivlasiuk.operationshubbackend.core.users;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
