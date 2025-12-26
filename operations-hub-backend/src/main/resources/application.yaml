@@ -1,0 +1,21 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: operations-hub-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/operations_hub
+    username: internal
+    password: secret
+    driver-class-name: org.postgresql.Driver
+
+    jpa:
+      hibernate:
+        ddl-auto: validate
+      show-sql: true
+      database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+    flyway:
+      enabled: true
