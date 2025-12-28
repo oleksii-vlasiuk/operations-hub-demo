@@ -2,6 +2,8 @@ package com.oleksiivlasiuk.operationshubbackend.core.users;
 
 import jakarta.persistence.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -11,39 +13,87 @@ public class User {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String username;
-
-    @Column(nullable = false)
     private String email;
 
-    public User() {}
-    public User(Long id, String email, String username) {
-        this.id = id;
+    @Column(nullable = false)
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus status;
+
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(nullable = false)
+    private Instant updatedAt;
+
+    protected User() {}
+
+    public User(Long id, String email, String firstName, String lastName, UserStatus status) {
         this.email = email;
-        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
-    public String getUsername() {
-        return username;
+    @PrePersist
+    void onCreate() {
+        createdAt = Instant.now();
+        updatedAt = createdAt;
+        status = UserStatus.ACTIVE;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = Instant.now();
     }
 
+    public Long getId() {
+        return id;
+    }
     public String getEmail() {
         return email;
+    }
+    public String getFirstName() {
+        return firstName;
+    }
+    public String getLastName() {
+        return lastName;
+    }
+    public UserStatus getStatus() {
+        return status;
+    }
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public Long getId() {
-        return id;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setStatus(UserStatus status) {
+        this.status = status;
+    }
+
+    public void block() {
+        this.status = UserStatus.BLOCKED;
+    }
+
+    public void activate() {
+        this.status = UserStatus.ACTIVE;
     }
 }
