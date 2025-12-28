@@ -1,10 +1,9 @@
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
 );
-
-INSERT INTO users (username, email) VALUES ('oleksii', 'oleksii@mail.com');
-INSERT INTO users (username, email) VALUES ('zhanna', 'zhanna@mail.com');
-INSERT INTO users (username, email) VALUES ('ivan', 'ivan@mail.com');
-INSERT INTO users (username, email) VALUES ('user', 'user@mail.com');
