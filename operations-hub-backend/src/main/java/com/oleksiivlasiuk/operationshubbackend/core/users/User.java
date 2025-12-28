@@ -34,6 +34,10 @@ public class User {
     @Column(nullable = false)
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -62,14 +66,6 @@ public class User {
         this.updatedAt = Instant.now();
     }
 
-    public void disable() {
-        this.status = UserStatus.DISABLED;
-    }
-
-    public void activate() {
-        this.status = UserStatus.ACTIVE;
-    }
-
     public Long getId() {
         return id;
     }
@@ -86,6 +82,10 @@ public class User {
         return lastName;
     }
 
+    public Role getRole() {
+        return role;
+    }
+
     public UserStatus getStatus() {
         return status;
     }
@@ -96,5 +96,21 @@ public class User {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void disable() {
+        this.status = UserStatus.DISABLED;
+    }
+
+    public void activate() {
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public void makeAdmin() {
+        this.role = Role.ADMIN;
+    }
+
+    public void makeUser() {
+        this.role = Role.USER;
     }
 }
