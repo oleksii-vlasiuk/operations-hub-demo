@@ -1,41 +1,44 @@
 package com.oleksiivlasiuk.operationshubbackend.core.users;
 
-import org.springframework.stereotype.Service;
-
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
 
-    private final UserRepository repository;
+    private final UserRepository userRepository;
 
-    public UserService(UserRepository repository) {
-        this.repository = repository;
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
+    @Transactional
     public User create(CreateUserRequest request) {
-        if (repository.existsByEmail(request.email())) {
-            throw new IllegalStateException("User already exists");
+        if (userRepository.existsByEmail(request.email())) {
+            throw new IllegalStateException("User with email already exists: " + request.email());
         }
 
-        User user = new User();
-        user.setEmail(request.email());
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-
-        return repository.save(user);
+        User user = new User(request.email(), request.firstName(), request.lastName());
+        return userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
     public List<User> getAll() {
-        return repository.findAll();
+        return userRepository.findAll();
     }
 
-    public void disable(Long id) {
-        User user = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    @Transactional(readOnly = true)
+    public List<User> getByStatus(UserStatus status) {
+        return userRepository.findByStatus(status);
+    }
 
-        user.setStatus(UserStatus.DISABLED);
-        repository.save(user);
+    @Transactional
+    public void disable(Long id) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: id=" + id));
+        user.disable();
+        userRepository.save(user);
     }
 }
-

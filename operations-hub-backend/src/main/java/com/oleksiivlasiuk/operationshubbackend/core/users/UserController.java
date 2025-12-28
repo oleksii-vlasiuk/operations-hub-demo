@@ -1,48 +1,48 @@
 package com.oleksiivlasiuk.operationshubbackend.core.users;
 
-import io.swagger.v3.oas.annotations.Operation;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     private final UserService userService;
+    private final UserMapper userMapper;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserMapper userMapper) {
         this.userService = userService;
+        this.userMapper = userMapper;
     }
 
-    @Operation(summary = "Get all users")
     @GetMapping
-    public List<UserResponse> getAllUsers() {
-        return userService.getAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public List<UserResponse> getUsers(@RequestParam(required = false) UserStatus status) {
+        List<User> users = status == null ? userService.getAll() : userService.getByStatus(status);
+        return users.stream()
+            .map(userMapper::toResponse)
+            .toList();
     }
 
     @PostMapping
-    public UserResponse createUser(@RequestBody CreateUserRequest request) {
+    public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
         User user = userService.create(request);
-        return toResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @DeleteMapping("/{id}")
-    public void disableUser(@PathVariable Long id) {
+    public ResponseEntity<Void> disableUser(@PathVariable Long id) {
         userService.disable(id);
-    }
-
-    private UserResponse toResponse(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getStatus()
-        );
+        return ResponseEntity.noContent().build();
     }
 }

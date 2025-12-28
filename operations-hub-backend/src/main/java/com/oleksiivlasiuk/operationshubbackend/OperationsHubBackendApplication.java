@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class OperationsHubBackendApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(OperationsHubBackendApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(OperationsHubBackendApplication.class, args);
+    }
 }
