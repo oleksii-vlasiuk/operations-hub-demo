@@ -1,5 +1,18 @@
+export type UserStatus = "ACTIVE" | "DISABLED";
+
+export type Role = "ADMIN" | "MANAGER" | "USER";
+
 export interface User {
   id: number;
-  username: string;
   email: string;
+  firstName: string;
+  lastName: string;
+  status: UserStatus;
+  role: Role;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
 }

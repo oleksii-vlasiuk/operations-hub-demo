@@ -41,4 +41,13 @@ public class UserService {
         user.disable();
         userRepository.save(user);
     }
+
+    @Transactional
+    public void enable(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: id=" + id));
+        user.enable();
+        userRepository.save(user);
+    }
+
 }

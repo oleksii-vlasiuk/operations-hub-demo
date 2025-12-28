@@ -51,19 +51,8 @@ public class User {
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.role = Role.USER;
         this.status = UserStatus.ACTIVE;
-    }
-
-    @PrePersist
-    protected void onCreate() {
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = Instant.now();
     }
 
     public Long getId() {
@@ -96,6 +85,29 @@ public class User {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        Instant now = Instant.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+
+        if (this.status == null) {
+            this.status = UserStatus.ACTIVE;
+        }
+        if (this.role == null) {
+            this.role = Role.USER;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
+
+    public void enable() {
+        this.status = UserStatus.ACTIVE;
     }
 
     public void disable() {

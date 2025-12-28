@@ -1,51 +1,145 @@
-import { useEffect, useState } from "react";
-import type { User } from "../User";
-import { getUsers, createUser, deleteUser } from "../usersApi";
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+} from "react";
+import {
+  getUsers,
+  createUser,
+  disableUser,
+  enableUser,
+} from "../api";
+import type {
+  User,
+  CreateUserRequest,
+  UserStatus,
+} from "../User";
 
 const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [username, setUsername] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [statusFilter, setStatusFilter] = useState<UserStatus | "ALL">("ALL");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadUsers = async (status?: UserStatus) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getUsers(status);
+      setUsers(response.data);
+    } catch (e) {
+      console.error(e);
+      setError("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    const response = await getUsers();
-    setUsers(response.data);
-  };
+    if (statusFilter === "ALL") {
+      loadUsers();
+    } else {
+      loadUsers(statusFilter);
+    }
+  }, [statusFilter]);
 
   const handleAddUser = async () => {
-    if (!username || !email) return;
+    if (!firstName || !lastName || !email) return;
 
-    await createUser({ username, email });
-    setUsername("");
-    setEmail("");
-    loadUsers();
+    const request: CreateUserRequest = { email, firstName, lastName };
+
+    try {
+      setLoading(true);
+      setError(null);
+      await createUser(request);
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      if (statusFilter === "ALL") {
+        loadUsers();
+      } else {
+        loadUsers(statusFilter);
+      }
+    } catch (e) {
+      console.error(e);
+      setError("Failed to create user");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteUser = async (id: number) => {
-    await deleteUser(id);
-    loadUsers();
+  const handleToggleStatus = async (user: User) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (user.status === "DISABLED") {
+        await enableUser(user.id);
+      } else {
+        await disableUser(user.id);
+      }
+
+      if (statusFilter === "ALL") {
+        loadUsers();
+      } else {
+        loadUsers(statusFilter);
+      }
+    } catch (e) {
+      console.error(e);
+      setError("Failed to update user status");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>Users</h1>
 
+      <div style={styles.filterRow}>
+        <span>Status:&nbsp;</span>
+        <select
+          value={statusFilter}
+          onChange={(e) =>
+            setStatusFilter(
+              e.target.value === "ALL" ? "ALL" : (e.target.value as UserStatus),
+            )
+          }
+          style={styles.select}
+        >
+          <option value="ALL">All</option>
+          <option value="ACTIVE">Active</option>
+          <option value="DISABLED">Disabled</option>
+        </select>
+      </div>
+
+      {loading && <p style={styles.info}>Loading...</p>}
+      {error && <p style={styles.error}>{error}</p>}
+
       <ul style={styles.list}>
         {users.map((user) => (
           <li key={user.id} style={styles.listItem}>
-            <span>
-              <strong>{user.username}</strong> — {user.email}
-            </span>
+            <div>
+              <div style={styles.userName}>
+                {user.firstName} {user.lastName}
+              </div>
+              <div style={styles.userMeta}>
+                {user.email} · Role: {user.role} · Status: {user.status}
+              </div>
+            </div>
 
             <button
-              onClick={() => handleDeleteUser(user.id)}
-              style={styles.deleteButton}
+              onClick={() => handleToggleStatus(user)}
+              style={
+                user.status === "DISABLED"
+                  ? styles.enableButton
+                  : styles.disableButton
+              }
             >
-              ✕
+              {user.status === "DISABLED" ? "Enable" : "Disable"}
             </button>
           </li>
         ))}
@@ -54,12 +148,18 @@ const UsersPage = () => {
       <div style={styles.form}>
         <input
           type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          placeholder="First name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
           style={styles.input}
         />
-
+        <input
+          type="text"
+          placeholder="Last name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          style={styles.input}
+        />
         <input
           type="email"
           placeholder="Email"
@@ -67,7 +167,6 @@ const UsersPage = () => {
           onChange={(e) => setEmail(e.target.value)}
           style={styles.input}
         />
-
         <button onClick={handleAddUser} style={styles.addButton}>
           Add User
         </button>
@@ -76,39 +175,73 @@ const UsersPage = () => {
   );
 };
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   container: {
-    maxWidth: "800px",
+    maxWidth: "900px",
     margin: "40px auto",
     padding: "0 20px",
     fontFamily: "system-ui, sans-serif",
   },
   title: {
+    marginBottom: "20px",
     fontSize: "28px",
-    marginBottom: "24px",
+  },
+  filterRow: {
+    marginBottom: "20px",
+    fontSize: "14px",
+  },
+  select: {
+    padding: "4px 8px",
+    fontSize: "14px",
+  },
+  info: {
+    fontSize: "14px",
+    marginBottom: "8px",
+  },
+  error: {
+    color: "red",
+    fontSize: "14px",
+    marginBottom: "8px",
   },
   list: {
     listStyle: "none",
     padding: 0,
-    marginBottom: "32px",
+    marginBottom: "30px",
   },
   listItem: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    padding: "10px 12px",
-    borderBottom: "1px solid #e5e7eb",
+    padding: "12px 0",
+    borderBottom: "1px solid #eee",
   },
-  deleteButton: {
-    background: "transparent",
+  userName: {
+    fontWeight: 600,
+  },
+  userMeta: {
+    fontSize: "13px",
+    color: "#6b7280",
+  },
+  disableButton: {
+    backgroundColor: "#dc2626",
+    color: "#fff",
     border: "none",
-    color: "#dc2626",
-    fontSize: "16px",
+    padding: "6px 12px",
+    borderRadius: "5px",
     cursor: "pointer",
+    fontSize: "13px",
+  },
+  enableButton: {
+    backgroundColor: "#16a34a",
+    color: "#fff",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontSize: "13px",
   },
   form: {
     display: "flex",
-    gap: "12px",
+    gap: "10px",
     flexWrap: "wrap",
   },
   input: {
