@@ -47,10 +47,12 @@ const UsersPage = () => {
   }, [statusFilter]);
 
   const handleAddUser = async () => {
-    if (!firstName || !lastName || !email) return;
+    if (!firstName || !lastName || !email) {
+      setError("Please fill in all fields");
+      return;
+    }
 
     const request: CreateUserRequest = { email, firstName, lastName };
-
     try {
       setLoading(true);
       setError(null);
@@ -58,18 +60,16 @@ const UsersPage = () => {
       setFirstName("");
       setLastName("");
       setEmail("");
-      if (statusFilter === "ALL") {
-        loadUsers();
-      } else {
-        loadUsers(statusFilter);
-      }
-    } catch (e) {
+      statusFilter === "ALL" ? loadUsers() : loadUsers(statusFilter);
+    } catch (e: any) {
       console.error(e);
-      setError("Failed to create user");
+      const backendMessage: string | undefined = e?.response?.data?.message;
+      setError(backendMessage || "Failed to create user");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleToggleStatus = async (user: User) => {
     try {
