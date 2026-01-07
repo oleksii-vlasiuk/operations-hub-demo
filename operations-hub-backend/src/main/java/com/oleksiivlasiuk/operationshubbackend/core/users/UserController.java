@@ -33,7 +33,7 @@ public class UserController {
         return userMapper.toResponse(user);
     }
 
-    @DeleteMapping("/{id}")
+    @PatchMapping("/{id}/disable")
     public ResponseEntity<Void> disableUser(@PathVariable Long id) {
         userService.disable(id);
         return ResponseEntity.noContent().build();
