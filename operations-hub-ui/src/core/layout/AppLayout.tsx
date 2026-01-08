@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -24,6 +25,7 @@ const PAGE_MAX_WIDTH = 1600;
 const navItems = [
   { label: "Overview", to: "/", icon: <DashboardOutlinedIcon fontSize="small" /> },
   { label: "Users", to: "/users", icon: <GroupOutlinedIcon fontSize="small" /> },
+  { label: "Audit", to: "/audit", icon: <ReceiptLongOutlinedIcon fontSize="small" /> },
 ];
 
 const sx = {
