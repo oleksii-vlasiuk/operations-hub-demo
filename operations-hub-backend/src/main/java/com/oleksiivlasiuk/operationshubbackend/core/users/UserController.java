@@ -1,33 +1,47 @@
 package com.oleksiivlasiuk.operationshubbackend.core.users;
 
-import io.swagger.v3.oas.annotations.Operation;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
-    private final UserRepository userRepository;
 
-    public UserController(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    private final UserService userService;
+    private final UserMapper userMapper;
+
+    public UserController(UserService userService, UserMapper userMapper) {
+        this.userService = userService;
+        this.userMapper = userMapper;
     }
 
-    @Operation(summary = "Get all users")
     @GetMapping
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserResponse> getUsers(@RequestParam(required = false) UserStatus status) {
+        List<User> users = status == null ? userService.getAll() : userService.getByStatus(status);
+        return users.stream()
+                .map(userMapper::toResponse)
+                .toList();
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userRepository.save(user);
+    public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
+        User user = userService.create(request);
+        return userMapper.toResponse(user);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userRepository.deleteById(id);
+    @PatchMapping("/{id}/disable")
+    public ResponseEntity<Void> disableUser(@PathVariable Long id) {
+        userService.disable(id);
+        return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/enable")
+    public void enableUser(@PathVariable Long id) {
+        userService.enable(id);
+    }
+
 }
