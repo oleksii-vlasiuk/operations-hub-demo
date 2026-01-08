@@ -1,61 +1,52 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Button,
+  Container,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 const HomePage = () => {
+  const navigate = useNavigate();
+
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Operations Hub Demo</h1>
+    <Container maxWidth="lg" sx={{ px: 0 }}>
+      {/* Hero / Intro */}
+      <Paper elevation={1} sx={{ mb: 3, p: 3 }}>
+        <Stack spacing={2}>
+          <Box>
+            <Typography variant="h1" sx={{ fontSize: 28, mb: 0.5 }}>
+              Operations Hub
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ maxWidth: 600 }}
+            >
+              Internal operations tool for managing users and future business
+              modules like tasks, requests and orders.
+            </Typography>
+          </Box>
 
-      <p style={styles.text}>
-        Operations Hub is a lightweight internal tool designed to help small and
-        medium-sized businesses manage their operational processes in a clear,
-        structured, and reliable way.
-      </p>
-
-      <p style={styles.text}>
-        This demo showcases a foundational architecture for internal systems:
-        a modular backend, a typed API, and a simple frontend client built for
-        maintainability and scalability.
-      </p>
-
-      <p style={styles.text}>
-        The goal is not to replace large enterprise platforms, but to provide
-        focused, cost-effective solutions tailored to real business workflows.
-      </p>
-
-      <Link to="/users" style={styles.button}>
-        Go to Users Management
-      </Link>
-    </div>
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate("/users")}
+              size="small"
+            >
+              Open Users module
+            </Button>
+            <Typography variant="body2" color="text.secondary">
+              Start with user management — the core of any internal system.
+            </Typography>
+          </Stack>
+        </Stack>
+      </Paper>
+    </Container>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    maxWidth: "800px",
-    margin: "60px auto",
-    padding: "0 20px",
-    fontFamily: "system-ui, sans-serif",
-    lineHeight: 1.6,
-  },
-  title: {
-    fontSize: "32px",
-    marginBottom: "24px",
-  },
-  text: {
-    fontSize: "16px",
-    marginBottom: "16px",
-    color: "#333",
-  },
-  button: {
-    display: "inline-block",
-    marginTop: "24px",
-    padding: "12px 20px",
-    backgroundColor: "#1e293b",
-    color: "#fff",
-    textDecoration: "none",
-    borderRadius: "6px",
-    fontWeight: 500,
-  },
 };
 
 export default HomePage;

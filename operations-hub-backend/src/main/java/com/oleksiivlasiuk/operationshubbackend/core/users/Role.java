@@ -1,6 +1,7 @@
 package com.oleksiivlasiuk.operationshubbackend.core.users;
 
-public enum UserStatus {
-    ACTIVE,
-    DISABLED
+public enum Role {
+    ADMIN,
+    MANAGER,
+    USER
 }

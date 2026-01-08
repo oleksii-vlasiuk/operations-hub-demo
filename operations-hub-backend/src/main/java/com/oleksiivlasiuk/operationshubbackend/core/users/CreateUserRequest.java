@@ -1,7 +1,16 @@
 package com.oleksiivlasiuk.operationshubbackend.core.users;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 public record CreateUserRequest(
+        @NotBlank(message = "Email is required")
+        @Email(message = "Email must be valid")
         String email,
+
+        @NotBlank(message = "First name is required")
         String firstName,
-        String lastName)
-{}
+
+        @NotBlank(message = "Last name is required")
+        String lastName
+) {}
