@@ -24,6 +24,8 @@ import {
 } from "@mui/material";
 import type { AuditEvent, Page } from "../types";
 import { getAudit } from "../api";
+import { useSearchParams } from "react-router-dom";
+
 
 const DEFAULT_ENTITY_TYPES = ["USER", "TASK", "TEAM"];
 const DEFAULT_ACTIONS = [
@@ -58,6 +60,8 @@ const AuditPage = () => {
   const [data, setData] = useState<Page<AuditEvent> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+
 
   // filters
   const [entityType, setEntityType] = useState<string>("USER");
@@ -103,12 +107,48 @@ const AuditPage = () => {
 
   const events = data?.content ?? [];
 
+  useEffect(() => {
+    const qpEntityType = searchParams.get("entityType") ?? "";
+    const qpEntityId = searchParams.get("entityId") ?? "";
+    const qpAction = searchParams.get("action") ?? "";
+    const qpActorUserId = searchParams.get("actorUserId") ?? "";
+
+    // Важно: чтобы не ломать UX, обновляем только если параметры реально пришли
+    let touched = false;
+
+    if (qpEntityType) {
+      setEntityType(qpEntityType);
+      touched = true;
+    }
+    if (qpEntityId) {
+      setEntityId(qpEntityId);
+      touched = true;
+    }
+    if (qpAction) {
+      setAction(qpAction);
+      touched = true;
+    }
+    if (qpActorUserId) {
+      setActorUserId(qpActorUserId);
+      touched = true;
+    }
+
+    if (touched) setPage(0);
+  }, [searchParams]);
+
+
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+    <Box sx={{
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+    }} 
+    >
       {/* Header */}
       <Box>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-          Audit log
+        <Typography variant="h1" sx={{ fontSize: 28, mb: 0.5 }}>
+          Audit
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Track important system actions. Use filters to narrow down events.
@@ -172,6 +212,7 @@ const AuditPage = () => {
               ))}
             </Select>
           </FormControl>
+          
 
           <TextField
             size="small"
@@ -195,10 +236,11 @@ const AuditPage = () => {
 
       {/* States */}
       {error && <Alert severity="error">{error}</Alert>}
-
+      
       {/* Table */}
-      <Paper variant="outlined" sx={{ overflow: "hidden" }}>
-        <TableContainer sx={{ maxHeight: 560 }}>
+      <Paper variant="outlined" sx={{ overflow: "hidden", flexGrow: 1 }}>
+        
+        <TableContainer sx={{ height: "100%", overflowY: "auto" }}>
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
@@ -307,6 +349,20 @@ const AuditPage = () => {
           rowsPerPageOptions={[10, 20, 50, 100]}
         />
       </Paper>
+      <Box>
+        <TablePagination
+          component="div"
+          count={data?.totalElements ?? 0}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[10, 20, 50, 100]}
+        />
+      </Box>
     </Box>
   );
 };

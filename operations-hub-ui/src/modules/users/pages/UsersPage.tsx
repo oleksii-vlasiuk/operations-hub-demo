@@ -22,12 +22,16 @@ import {
   Tooltip,
   Typography,
   CircularProgress,
+  TableContainer,
 } from "@mui/material";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import type { User, UserStatus, CreateUserRequest } from "../types";
 import { getUsers, createUser, disableUser, enableUser } from "../api";
+import { useNavigate } from "react-router-dom";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+
 
 type StatusFilter = "ALL" | UserStatus;
 
@@ -103,7 +107,7 @@ const UsersPage = () => {
     } catch (e: any) {
       setError(
         e?.response?.data?.message ||
-          "Failed to create user. Please check input values."
+        "Failed to create user. Please check input values."
       );
     } finally {
       setLoading(false);
@@ -131,8 +135,25 @@ const UsersPage = () => {
     }
   };
 
+  const navigate = useNavigate();
+
+  const openUserAudit = (userId: number) => {
+    navigate(`/audit?entityType=USER&entityId=${userId}`);
+  };
+
+
+  function actionChipColor(action: any): import("@mui/types").OverridableStringUnion<"error" | "success" | "info" | "warning" | "default" | "primary" | "secondary", import("@mui/material").ChipPropsColorOverrides> | undefined {
+    throw new Error("Function not implemented.");
+  }
+
   return (
-    <Box sx={{ maxWidth: 900, mx: "auto" }}>
+    <Box sx={{
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+    }}
+    >
       {/* Page Title */}
       <Box
         sx={{
@@ -144,164 +165,143 @@ const UsersPage = () => {
         }}
       >
         <Box>
-          <Typography variant="h1" sx={{ fontSize: 24, mb: 0.5 }}>
+          <Typography variant="h1" sx={{ fontSize: 28, mb: 0.5 }}>
             Users
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Manage internal users, their roles and access status.
           </Typography>
         </Box>
-        <Button
+        {/* <Button
           variant="contained"
           startIcon={<AddIcon />}
           size="small"
           onClick={handleOpenDialog}
         >
           New user
-        </Button>
+        </Button> */}
       </Box>
-        {/*Filters and state*/}
-        <Box
-          sx={{
-            mb: 2,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Typography variant="body2" color="text.secondary">
-              Status:
-            </Typography>
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={statusFilter}
-              onChange={handleFilterChange}
-            >
-              <ToggleButton value="ALL">All</ToggleButton>
-              <ToggleButton value="ACTIVE">Active</ToggleButton>
-              <ToggleButton value="DISABLED">Disabled</ToggleButton>
-            </ToggleButtonGroup>
-          </Stack>
-
-          {loading && (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={18} />
-              <Typography variant="caption" color="text.secondary">
-                Updating…
-              </Typography>
-            </Stack>
-          )}
-        </Box>
-
-        {error && (
-          <Alert
-            severity="error"
-            sx={{ mb: 2 }}
-            onClose={() => setError(null)}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {/* Users */}
-        {/* <Box sx={{ width: "100%", overflowX: "auto" }}> */}
-        <Paper
+      {/*Filters and state*/}
+      <Box
         sx={{
-          maxWidth: 900,
-          mx: "auto",
-          borderRadius: 2,
-          overflow: "hidden",              // ✅ сохраняет скругления
-          border: "1px solid",
-          borderColor: "divider",
+          mb: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+          flexWrap: "wrap",
         }}
       >
-        {/* (optional) padding around the table, but NOT on the scroll container */}
-        <Box sx={{ p: 2 }}>
-          <Box
-            sx={{
-              maxHeight: 466,
-              overflow: "auto",
-              "&::-webkit-scrollbar": { width: 10, height: 10 },
-              "&::-webkit-scrollbar-track": { background: "transparent" },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "rgba(0,0,0,0.18)",
-                borderRadius: 999,
-                border: "3px solid transparent",
-                backgroundClip: "content-box",
-              },
-              "&::-webkit-scrollbar-thumb:hover": {
-                backgroundColor: "rgba(0,0,0,0.28)",
-              },
-
-              // ✅ Firefox
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(0,0,0,0.25) transparent",
-            }}
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            Status:
+          </Typography>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={statusFilter}
+            onChange={handleFilterChange}
           >
-            <Table
-              stickyHeader
-              size="small" 
-              sx={{
-                "& .MuiTableCell-root": { py: 0.8, px: 1.5, whiteSpace: "nowrap" },
-                "& .MuiTableCell-head": { fontWeight: 600 },
-              }}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
+            <ToggleButton value="ALL">All</ToggleButton>
+            <ToggleButton value="ACTIVE">Active</ToggleButton>
+            <ToggleButton value="DISABLED">Disabled</ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            sx={{ ml: 'auto' }}
+            variant="contained"
+            startIcon={<AddIcon />}
+            size="small"
+            onClick={handleOpenDialog}
+          >
+            New user
+          </Button>
+        </Stack>
 
-              <TableBody>
-                {users.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-                        No users found for the selected filter.
+        {loading && (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={18} />
+            <Typography variant="caption" color="text.secondary">
+              Updating…
+            </Typography>
+          </Stack>
+        )}
+      </Box>
+
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+
+      {/* Users */}
+      {/* <Box sx={{ width: "100%", overflowX: "auto" }}> */}
+      {/* Table */}
+      <Paper variant="outlined" sx={{ overflow: "hidden", flexGrow: 1 }}>
+        <TableContainer sx={{ height: "100%", overflowY: "auto" }}>
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Role</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Created</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+                      No users found for the selected filter.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users.map((user) => (
+                  <TableRow key={user.id} hover>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {user.firstName} {user.lastName}
                       </Typography>
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id} hover>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {user.firstName} {user.lastName}
-                        </Typography>
-                      </TableCell>
 
-                      <TableCell>
-                        <Typography variant="body2">{user.email}</Typography>
-                      </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{user.email}</Typography>
+                    </TableCell>
 
-                      <TableCell>
-                        <Typography variant="body2">{user.role || "—"}</Typography>
-                      </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{user.role || "—"}</Typography>
+                    </TableCell>
 
-                      <TableCell>
-                        <Chip
-                          label={user.status === "ACTIVE" ? "Active" : "Disabled"}
-                          size="small"
-                          color={user.status === "ACTIVE" ? "success" : "default"}
-                          variant={user.status === "ACTIVE" ? "filled" : "outlined"}
-                          sx={{ height: 22 }} // ✅ чуть компактнее
-                        />
-                      </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={user.status === "ACTIVE" ? "Active" : "Disabled"}
+                        size="small"
+                        color={user.status === "ACTIVE" ? "success" : "default"}
+                        variant={user.status === "ACTIVE" ? "filled" : "outlined"}
+                        sx={{ height: 22 }} // ✅ чуть компактнее
+                      />
+                    </TableCell>
 
-                      <TableCell>
-                        <Typography variant="body2">{formatDate(user.createdAt)}</Typography>
-                      </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{formatDate(user.createdAt)}</Typography>
+                    </TableCell>
 
-                      <TableCell align="right">
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                        <Tooltip title="View audit">
+                          <IconButton size="small" onClick={() => openUserAudit(user.id)}>
+                            <ReceiptLongOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+
                         <Tooltip
                           title={user.status === "ACTIVE" ? "Disable user" : "Enable user"}
                         >
@@ -313,14 +313,14 @@ const UsersPage = () => {
                             )}
                           </IconButton>
                         </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Box>
-        </Box>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Paper>
 
       {/* Create user dialog */}
