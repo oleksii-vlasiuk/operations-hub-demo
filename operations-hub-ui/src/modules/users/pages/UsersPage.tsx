@@ -141,11 +141,6 @@ const UsersPage = () => {
     navigate(`/audit?entityType=USER&entityId=${userId}`);
   };
 
-
-  function actionChipColor(action: any): import("@mui/types").OverridableStringUnion<"error" | "success" | "info" | "warning" | "default" | "primary" | "secondary", import("@mui/material").ChipPropsColorOverrides> | undefined {
-    throw new Error("Function not implemented.");
-  }
-
   return (
     <Box sx={{
       height: "100%",

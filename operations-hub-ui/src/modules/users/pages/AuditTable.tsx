@@ -1,4 +1,3 @@
-// src/modules/audit/components/AuditTable.tsx
 import {
   Alert,
   Box,

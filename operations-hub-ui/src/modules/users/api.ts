@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { CreateUserRequest, User, UserStatus } from "./User";
-import type { AuditEvent, Page } from "./types";
+import type { AuditEvent } from "./types";
 import { api } from "../../core/api/axios";
 
 const client = axios.create({
