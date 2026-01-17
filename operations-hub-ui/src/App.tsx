@@ -1,4 +1,3 @@
-// src/App.tsx
 import { Routes, Route } from "react-router-dom";
 import AppLayout from "./core/layout/AppLayout";
 import HomePage from "./core/layout/HomePage";

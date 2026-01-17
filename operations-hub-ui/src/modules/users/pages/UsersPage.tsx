@@ -172,14 +172,6 @@ const UsersPage = () => {
             Manage internal users, their roles and access status.
           </Typography>
         </Box>
-        {/* <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          size="small"
-          onClick={handleOpenDialog}
-        >
-          New user
-        </Button> */}
       </Box>
       {/*Filters and state*/}
       <Box
@@ -238,7 +230,6 @@ const UsersPage = () => {
       )}
 
       {/* Users */}
-      {/* <Box sx={{ width: "100%", overflowX: "auto" }}> */}
       {/* Table */}
       <Paper variant="outlined" sx={{ overflow: "hidden", flexGrow: 1 }}>
         <TableContainer sx={{ height: "100%", overflowY: "auto" }}>

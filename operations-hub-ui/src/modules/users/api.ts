@@ -21,15 +21,25 @@ export const disableUser = (id: number) =>
 export const enableUser = (id: number) =>
   client.patch<void>(`/users/${id}/enable`);
 
-export type AuditQuery = {
-  entityType?: string;      // e.g. "USER"
-  entityId?: string;        // e.g. "4"
-  action?: string;          // e.g. "USER_DISABLED"
-  actorUserId?: number;
-  page?: number;            // 0-based
-  size?: number;            // 1..100
+
+export type AuditPageResponse = {
+  content: AuditEvent[];
+  totalElements: number;
+  number: number; // текущая страница
+  size: number;
 };
 
-export function getAudit(query: AuditQuery) {
-  return api.get<Page<AuditEvent>>("/audit", { params: query });
+export type AuditQuery = {
+  entityType?: string;
+  entityId?: string;
+  action?: string;
+  actorUserId?: string;
+  from?: string;
+  to?: string;
+  page: number;
+  size: number;
+};
+
+export function getAuditEvents(params: AuditQuery) {
+  return api.get<AuditPageResponse>("/audit", { params });
 }

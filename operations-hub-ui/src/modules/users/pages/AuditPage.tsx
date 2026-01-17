@@ -1,33 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Box,
-  Chip,
-  Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Tooltip,
-} from "@mui/material";
-import type { AuditEvent, Page } from "../types";
-import { getAudit } from "../api";
 import { useSearchParams } from "react-router-dom";
+import { Box, Button, FormControl, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
+import { getAuditEvents, type AuditQuery } from "../api";
+import type { AuditEvent } from "../types";
+import AuditTable from "./AuditTable";
 
+type Filters = {
+  entityType: string;
+  entityId: string;
+  action: string;
+  actorUserId: string;
+  from: string;
+  to: string;
+};
+
+const emptyFilters: Filters = {
+  entityType: "",
+  entityId: "",
+  action: "",
+  actorUserId: "",
+  from: "",
+  to: "",
+};
 
 const DEFAULT_ENTITY_TYPES = ["USER", "TASK", "TEAM"];
+
 const DEFAULT_ACTIONS = [
   "USER_CREATED",
   "USER_ENABLED",
@@ -37,115 +34,106 @@ const DEFAULT_ACTIONS = [
   "TASK_DONE",
 ];
 
-function formatDateTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString();
-}
+export default function AuditPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
 
-function actionChipColor(action: string):
-  | "default"
-  | "primary"
-  | "secondary"
-  | "success"
-  | "warning"
-  | "error" {
-  if (action.includes("CREATED")) return "primary";
-  if (action.includes("ENABLED")) return "success";
-  if (action.includes("DISABLED")) return "warning";
-  if (action.includes("DONE")) return "success";
-  return "default";
-}
+  // state
+  const [filters, setFilters] = useState<Filters>(emptyFilters);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
-const AuditPage = () => {
-  const [data, setData] = useState<Page<AuditEvent> | null>(null);
+  const [rows, setRows] = useState<AuditEvent[]>([]);
+  const [total, setTotal] = useState(0);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchParams] = useSearchParams();
 
-
-  // filters
-  const [entityType, setEntityType] = useState<string>("USER");
-  const [entityId, setEntityId] = useState<string>("");
-  const [action, setAction] = useState<string>("");
-  const [actorUserId, setActorUserId] = useState<string>("");
-
-  // pagination
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
-
-  const query = useMemo(() => {
-    const q: any = {
-      page,
-      size: rowsPerPage,
+  // 1) прочитать URL → заполнить filters/page/pageSize
+  useEffect(() => {
+    const next: Filters = {
+      entityType: searchParams.get("entityType") ?? "",
+      entityId: searchParams.get("entityId") ?? "",
+      action: searchParams.get("action") ?? "",
+      actorUserId: searchParams.get("actorUserId") ?? "",
+      from: searchParams.get("from") ?? "",
+      to: searchParams.get("to") ?? "",
     };
+    setFilters(next);
 
-    if (entityType) q.entityType = entityType;
-    if (entityId.trim()) q.entityId = entityId.trim();
-    if (action) q.action = action;
-    if (actorUserId.trim()) q.actorUserId = Number(actorUserId.trim());
-
-    return q;
-  }, [entityType, entityId, action, actorUserId, page, rowsPerPage]);
-
-  const load = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await getAudit(query);
-      setData(res.data);
-    } catch (e: any) {
-      setError("Failed to load audit events");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
+    const p = searchParams.get("page");
+    const s = searchParams.get("size");
+    setPage(p ? Math.max(0, parseInt(p, 10) || 0) : 0);
+    setPageSize(s ? Math.max(1, parseInt(s, 10) || 20) : 20);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
-
-  const events = data?.content ?? [];
-
-  useEffect(() => {
-    const qpEntityType = searchParams.get("entityType") ?? "";
-    const qpEntityId = searchParams.get("entityId") ?? "";
-    const qpAction = searchParams.get("action") ?? "";
-    const qpActorUserId = searchParams.get("actorUserId") ?? "";
-
-    // Важно: чтобы не ломать UX, обновляем только если параметры реально пришли
-    let touched = false;
-
-    if (qpEntityType) {
-      setEntityType(qpEntityType);
-      touched = true;
-    }
-    if (qpEntityId) {
-      setEntityId(qpEntityId);
-      touched = true;
-    }
-    if (qpAction) {
-      setAction(qpAction);
-      touched = true;
-    }
-    if (qpActorUserId) {
-      setActorUserId(qpActorUserId);
-      touched = true;
-    }
-
-    if (touched) setPage(0);
   }, [searchParams]);
 
+  // 2) построить query для API
+  const query: AuditQuery = useMemo(() => {
+    const q: AuditQuery = { page, size: pageSize };
+
+    if (filters.entityType) q.entityType = filters.entityType;
+    if (filters.entityId) q.entityId = filters.entityId;
+    if (filters.action) q.action = filters.action;
+    if (filters.actorUserId) q.actorUserId = filters.actorUserId;
+    if (filters.from) q.from = filters.from;
+    if (filters.to) q.to = filters.to;
+
+    return q;
+  }, [filters, page, pageSize]);
+
+  // 3) загрузка при изменении query
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await getAuditEvents(query);
+        if (cancelled) return;
+
+        setRows(res.data.content);
+        setTotal(res.data.totalElements);
+      } catch (e) {
+        if (!cancelled) setError("Failed to load audit events");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [query]);
+
+  // helpers: применить/очистить (синхроним URL)
+  const applyToUrl = (nextFilters: Filters, nextPage: number, nextSize: number) => {
+    const sp = new URLSearchParams();
+
+    if (nextFilters.entityType) sp.set("entityType", nextFilters.entityType);
+    if (nextFilters.entityId) sp.set("entityId", nextFilters.entityId);
+    if (nextFilters.action) sp.set("action", nextFilters.action);
+    if (nextFilters.actorUserId) sp.set("actorUserId", nextFilters.actorUserId);
+    if (nextFilters.from) sp.set("from", nextFilters.from);
+    if (nextFilters.to) sp.set("to", nextFilters.to);
+
+    sp.set("page", String(nextPage));
+    sp.set("size", String(nextSize));
+
+    setSearchParams(sp);
+  };
+
+  const handleApply = () => applyToUrl(filters, 0, pageSize);
+  const handleClear = () => applyToUrl(emptyFilters, 0, pageSize);
+
+  // controlled callbacks для таблицы:
+  const handlePageChange = (nextPage: number) => applyToUrl(filters, nextPage, pageSize);
+  const handlePageSizeChange = (nextSize: number) => applyToUrl(filters, 0, nextSize);
 
   return (
-    <Box sx={{
-      height: "100%",
-      display: "flex",
-      flexDirection: "column",
-      gap: 2,
-    }} 
-    >
-      {/* Header */}
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Box>
         <Typography variant="h1" sx={{ fontSize: 28, mb: 0.5 }}>
           Audit
@@ -155,52 +143,37 @@ const AuditPage = () => {
         </Typography>
       </Box>
 
-      {/* Filters */}
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          alignItems={{ xs: "stretch", md: "center" }}
-        >
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>Entity</InputLabel>
+      <Paper sx={{ p: 2 }}>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap alignItems="center">
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>Entity type</InputLabel>
             <Select
-              label="Entity"
-              value={entityType}
-              onChange={(e) => {
-                setPage(0);
-                setEntityType(e.target.value);
-              }}
+              label="Entity type"
+              value={filters.entityType}
+              onChange={(e) => setFilters((p) => ({ ...p, entityType: e.target.value }))}
             >
-              {DEFAULT_ENTITY_TYPES.map((t) => (
-                <MenuItem key={t} value={t}>
-                  {t}
+              <MenuItem value="">
+                <em>All</em>
+              </MenuItem>
+              {DEFAULT_ENTITY_TYPES.map((a) => (
+                <MenuItem key={a} value={a}>
+                  {a}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-
           <TextField
+            label="Entity id"
             size="small"
-            label="Entity ID"
-            placeholder="e.g. 4"
-            value={entityId}
-            onChange={(e) => {
-              setPage(0);
-              setEntityId(e.target.value);
-            }}
-            sx={{ width: { xs: "100%", md: 180 } }}
+            value={filters.entityId}
+            onChange={(e) => setFilters((p) => ({ ...p, entityId: e.target.value }))}
           />
-
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Action</InputLabel>
             <Select
               label="Action"
-              value={action}
-              onChange={(e) => {
-                setPage(0);
-                setAction(e.target.value);
-              }}
+              value={filters.action}
+              onChange={(e) => setFilters((p) => ({ ...p, action: e.target.value }))}
             >
               <MenuItem value="">
                 <em>All</em>
@@ -212,159 +185,34 @@ const AuditPage = () => {
               ))}
             </Select>
           </FormControl>
-          
-
           <TextField
+            label="Actor user id"
             size="small"
-            label="Actor user ID"
-            placeholder="e.g. 1"
-            value={actorUserId}
-            onChange={(e) => {
-              setPage(0);
-              setActorUserId(e.target.value);
-            }}
-            sx={{ width: { xs: "100%", md: 160 } }}
+            value={filters.actorUserId}
+            onChange={(e) => setFilters((p) => ({ ...p, actorUserId: e.target.value }))}
           />
 
           <Box sx={{ flexGrow: 1 }} />
 
-          <Typography variant="caption" color="text.secondary">
-            {data ? `${data.totalElements} events` : "—"}
-          </Typography>
+          <Button variant="outlined" onClick={handleClear}>
+            Clear
+          </Button>
+          <Button variant="contained" onClick={handleApply}>
+            Apply
+          </Button>
         </Stack>
       </Paper>
 
-      {/* States */}
-      {error && <Alert severity="error">{error}</Alert>}
-      
-      {/* Table */}
-      <Paper variant="outlined" sx={{ overflow: "hidden", flexGrow: 1 }}>
-        
-        <TableContainer sx={{ height: "100%", overflowY: "auto" }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ width: 180 }}>Time</TableCell>
-                <TableCell sx={{ width: 200 }}>Action</TableCell>
-                <TableCell sx={{ width: 160 }}>Entity</TableCell>
-                <TableCell>Summary</TableCell>
-                <TableCell sx={{ width: 140 }} align="right">
-                  Actor
-                </TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5}>
-                    <Box sx={{ py: 3, display: "flex", justifyContent: "center" }}>
-                      <CircularProgress size={22} />
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ) : events.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5}>
-                    <Box sx={{ py: 3 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        No audit events found for the selected filters.
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                events.map((e) => (
-                  <TableRow key={e.id} hover>
-                    <TableCell>
-                      <Typography variant="body2">{formatDateTime(e.occurredAt)}</Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={e.action}
-                        color={actionChipColor(e.action)}
-                        variant="outlined"
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip size="small" label={e.entityType} variant="outlined" />
-                        <Typography variant="body2" color="text.secondary">
-                          #{e.entityId}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2">{e.summary}</Typography>
-                      {e.metadata && e.metadata !== "{}" ? (
-                        <>
-                          <Divider sx={{ my: 0.75 }} />
-                          <Tooltip title="Raw metadata JSON">
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                fontFamily: "monospace",
-                                color: "text.secondary",
-                                display: "inline-block",
-                                maxWidth: "100%",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                cursor: "help",
-                              }}
-                            >
-                              {e.metadata}
-                            </Typography>
-                          </Tooltip>
-                        </>
-                      ) : null}
-                    </TableCell>
-
-                    <TableCell align="right">
-                      <Typography variant="body2" color="text.secondary">
-                        {e.actorUserId ?? "—"}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        <TablePagination
-          component="div"
-          count={data?.totalElements ?? 0}
-          page={page}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-          rowsPerPageOptions={[10, 20, 50, 100]}
-        />
-      </Paper>
-      <Box>
-        <TablePagination
-          component="div"
-          count={data?.totalElements ?? 0}
-          page={page}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-          rowsPerPageOptions={[10, 20, 50, 100]}
-        />
-      </Box>
+      <AuditTable
+        rows={rows}
+        loading={loading}
+        error={error}
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+      />
     </Box>
   );
-};
-
-export default AuditPage;
+}
