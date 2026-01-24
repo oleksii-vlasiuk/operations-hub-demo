@@ -12,6 +12,8 @@ import {
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { AuthProvider } from "../auth/AuthContext";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -147,113 +149,111 @@ const sx = {
 const AppLayout = ({ children }: AppLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, loading } = useCurrentUser();
+
 
   return (
-    <Box sx={sx.root}>
-      {/* SIDEBAR */}
-      <Box component="aside" sx={sx.sidebar}>
-        <Box sx={sx.sidebarHeader}>
-          <Box sx={sx.logo}>OH</Box>
+    <AuthProvider value={{ user, loading }}>
+      <Box sx={sx.root}>
+        <Box component="aside" sx={sx.sidebar}>
+          <Box sx={sx.sidebarHeader}>
+            <Box sx={sx.logo}>OH</Box>
 
-          <Box sx={{margin: 1.7}}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2 }}>
-              Operations Hub
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
-              Internal tools demo
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box sx={sx.navBlock}>
-          <Typography variant="caption" color="text.secondary" sx={sx.navLabel}>
-            Main
-          </Typography>
-
-          <List disablePadding>
-            {navItems.map((item) => {
-              const selected = location.pathname === item.to;
-
-              return (
-                <ListItemButton
-                  key={item.to}
-                  selected={selected}
-                  onClick={() => navigate(item.to)}
-                  sx={sx.navBtn}
-                  aria-current={selected ? "page" : undefined}
-                >
-                  <ListItemIcon sx={sx.navIcon(selected)}>{item.icon}</ListItemIcon>
-
-                  <ListItemText
-                    primary={item.label}
-                    primaryTypographyProps={{
-                      fontSize: 14,
-                      fontWeight: selected ? 600 : 500,
-                    }}
-                  />
-                </ListItemButton>
-              );
-            })}
-          </List>
-        </Box>
-
-        <Box sx={{ flexGrow: 1 }} />
-
-        <Box sx={sx.profile}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Avatar sx={{ width: 38, height: 38 }}>OV</Avatar>
-
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" sx={{ lineHeight: 1.2 }} noWrap>
-                Oleksii Vlasiuk
+            <Box sx={{margin: 1.7}}>
+              <Typography sx={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2 }}>
+                Operations Hub
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
-                Admin
+                Internal tools demo
               </Typography>
             </Box>
           </Box>
-        </Box>
-      </Box>
 
-      {/* MAIN AREA */}
-      <Box sx={sx.main}>
-{/*         
-        <Box component="header" sx={sx.header}>
-        //later: Notifications + ProfileMenu
-        </Box> 
-*/}
+          <Box sx={sx.navBlock}>
+            <Typography variant="caption" color="text.secondary" sx={sx.navLabel}>
+              Main
+            </Typography>
 
+            <List disablePadding>
+              {navItems.map((item) => {
+                const selected = location.pathname === item.to;
 
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            overflow: "hidden", // ← ВАЖНО
-            px: 3,
-            py: 3,
-          }}
-        >
-          <Box
-            sx={{
-              maxWidth: PAGE_MAX_WIDTH,
-              mx: "auto",
-              height: "100%",          // ← ВАЖНО
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {children}
+                return (
+                  <ListItemButton
+                    key={item.to}
+                    selected={selected}
+                    onClick={() => navigate(item.to)}
+                    sx={sx.navBtn}
+                    aria-current={selected ? "page" : undefined}
+                  >
+                    <ListItemIcon sx={sx.navIcon(selected)}>{item.icon}</ListItemIcon>
+
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{
+                        fontSize: 14,
+                        fontWeight: selected ? 600 : 500,
+                      }}
+                    />
+                  </ListItemButton>
+                );
+              })}
+            </List>
+          </Box>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Box sx={sx.profile}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Avatar sx={{ width: 28, height: 28 }}>
+                  {user?.firstName?.[0] ?? "?"}
+              </Avatar>
+
+              <Box>
+                  <Typography variant="body2" sx={{ lineHeight: 1.2 }}>
+                  {loading ? "Loading…" : user ? `${user.firstName} ${user.lastName}` : "Guest"}
+                  </Typography>
+
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                  {user?.role ?? ""}
+                  </Typography>
+              </Box>
+            </Box>
           </Box>
         </Box>
 
+        <Box sx={sx.main}>
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              overflow: "hidden", 
+              px: 3,
+              py: 3,
+            }}
+          >
+            <Box
+              sx={{
+                maxWidth: PAGE_MAX_WIDTH,
+                mx: "auto",
+                height: "100%",        
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {children}
+            </Box>
+          </Box>
 
-        <Box component="footer" sx={sx.footer}>
-            <span></span>
-          <span>© 2025 Operations Hub - Demo</span>
-          
+
+          <Box component="footer" sx={sx.footer}>
+              <span></span>
+            <span>© 2025 Operations Hub - Demo</span>
+            
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </AuthProvider>
   );
 };
 

@@ -7,6 +7,8 @@ const client = axios.create({
   baseURL: "http://localhost:8081/api",
 });
 
+export const getCurrentUser = () => api.get<User>("/users/me");
+
 export const getUsers = (status?: UserStatus) =>
   client.get<User[]>("/users", {
     params: status ? { status } : {},
