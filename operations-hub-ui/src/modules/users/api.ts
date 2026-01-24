@@ -1,5 +1,7 @@
 import axios from "axios";
 import type { CreateUserRequest, User, UserStatus } from "./User";
+import type { AuditEvent } from "./types";
+import { api } from "../../core/api/axios";
 
 const client = axios.create({
   baseURL: "http://localhost:8081/api",
@@ -18,3 +20,26 @@ export const disableUser = (id: number) =>
 
 export const enableUser = (id: number) =>
   client.patch<void>(`/users/${id}/enable`);
+
+
+export type AuditPageResponse = {
+  content: AuditEvent[];
+  totalElements: number;
+  number: number; // текущая страница
+  size: number;
+};
+
+export type AuditQuery = {
+  entityType?: string;
+  entityId?: string;
+  action?: string;
+  actorUserId?: string;
+  from?: string;
+  to?: string;
+  page: number;
+  size: number;
+};
+
+export function getAuditEvents(params: AuditQuery) {
+  return api.get<AuditPageResponse>("/audit", { params });
+}

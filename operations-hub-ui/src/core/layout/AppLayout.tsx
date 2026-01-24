@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -24,12 +25,14 @@ const PAGE_MAX_WIDTH = 1600;
 const navItems = [
   { label: "Overview", to: "/", icon: <DashboardOutlinedIcon fontSize="small" /> },
   { label: "Users", to: "/users", icon: <GroupOutlinedIcon fontSize="small" /> },
+  { label: "Audit", to: "/audit", icon: <ReceiptLongOutlinedIcon fontSize="small" /> },
 ];
 
 const sx = {
   root: {
     display: "flex",
-    minHeight: "100vh",
+    height: "100dvh",
+    overflow: "hidden",      // ключ
     bgcolor: "background.default",
   },
   sidebar: {
@@ -42,7 +45,8 @@ const sx = {
     flexDirection: "column",
   },
   sidebarHeader: {
-    px: 2,
+    px: 3,
+    py: 5.5,
     height: HEADER_HEIGHT,
     display: "flex",
     alignItems: "center",
@@ -213,19 +217,40 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
       {/* MAIN AREA */}
       <Box sx={sx.main}>
+{/*         
         <Box component="header" sx={sx.header}>
-          {/* later: Notifications + ProfileMenu */}
-        </Box>
+        //later: Notifications + ProfileMenu
+        </Box> 
+*/}
 
-        <Box component="main" sx={sx.content}>
-          <Box sx={sx.contentInner}>
+
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            overflow: "hidden", // ← ВАЖНО
+            px: 3,
+            py: 3,
+          }}
+        >
+          <Box
+            sx={{
+              maxWidth: PAGE_MAX_WIDTH,
+              mx: "auto",
+              height: "100%",          // ← ВАЖНО
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             {children}
           </Box>
         </Box>
 
+
         <Box component="footer" sx={sx.footer}>
-          <span>© 2025 Operations Hub</span>
-          <span>Internal tools demo</span>
+            <span></span>
+          <span>© 2025 Operations Hub - Demo</span>
+          
         </Box>
       </Box>
     </Box>

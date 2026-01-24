@@ -3,52 +3,101 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Tooltip,
   Typography,
   CircularProgress,
 } from "@mui/material";
-import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
-import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import type { User, UserStatus, CreateUserRequest } from "../types";
 import { getUsers, createUser, disableUser, enableUser } from "../api";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import UsersTable from "./UsersTable";
+
 
 type StatusFilter = "ALL" | UserStatus;
 
-const formatDate = (value?: string) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString();
-};
-
 const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // state for dialog "New user"
   const [dialogOpen, setDialogOpen] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+
+  type SortOrder = "asc" | "desc";
+  type SortField = "name"; 
+
+  const parseStatus = (v: string | null): StatusFilter => {
+    if (v === "ACTIVE" || v === "DISABLED" || v === "ALL") return v;
+    return "ALL";
+    };
+
+    const parseSortField = (v: string | null): SortField => {
+    if (v === "name") return "name";
+    return "name";
+    };
+
+    const parseOrder = (v: string | null): SortOrder => {
+    if (v === "asc" || v === "desc") return v;
+    return "asc";
+  };
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() =>
+    parseStatus(searchParams.get("status"))
+  );
+
+  const [sortField, setSortField] = useState<SortField>(() =>
+    parseSortField(searchParams.get("sort"))
+  );
+
+  const [sortOrder, setSortOrder] = useState<SortOrder>(() =>
+    parseOrder(searchParams.get("order"))
+  );
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+
+    next.set("status", statusFilter);
+    next.set("sort", sortField);
+    next.set("order", sortOrder);
+
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, sortField, sortOrder]);
+
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+};
+
+  const sortedUsers = [...users].sort((a, b) => {
+    if (sortField === "name") {
+      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+
+      if (nameA < nameB) return sortOrder === "asc" ? -1 : 1;
+      if (nameA > nameB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    }
+
+    return 0;
+  });
 
   const loadUsers = async (status?: UserStatus) => {
     try {
@@ -64,12 +113,10 @@ const UsersPage = () => {
   };
 
   useEffect(() => {
-    if (statusFilter === "ALL") {
-      void loadUsers();
-    } else {
-      void loadUsers(statusFilter);
-    }
+    if (statusFilter === "ALL") void loadUsers();
+    else void loadUsers(statusFilter);
   }, [statusFilter]);
+
 
   const handleFilterChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -103,7 +150,7 @@ const UsersPage = () => {
     } catch (e: any) {
       setError(
         e?.response?.data?.message ||
-          "Failed to create user. Please check input values."
+        "Failed to create user. Please check input values."
       );
     } finally {
       setLoading(false);
@@ -131,8 +178,20 @@ const UsersPage = () => {
     }
   };
 
+  const navigate = useNavigate();
+
+  const openUserAudit = (userId: number) => {
+    navigate(`/audit?entityType=USER&entityId=${userId}`);
+  };
+
   return (
-    <Box sx={{ maxWidth: 900, mx: "auto" }}>
+    <Box sx={{
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+    }}
+    >
       {/* Page Title */}
       <Box
         sx={{
@@ -144,185 +203,80 @@ const UsersPage = () => {
         }}
       >
         <Box>
-          <Typography variant="h1" sx={{ fontSize: 24, mb: 0.5 }}>
+          <Typography variant="h1" sx={{ fontSize: 28, mb: 0.5 }}>
             Users
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Manage internal users, their roles and access status.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          size="small"
-          onClick={handleOpenDialog}
-        >
-          New user
-        </Button>
       </Box>
-        {/*Filters and state*/}
-        <Box
-          sx={{
-            mb: 2,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Typography variant="body2" color="text.secondary">
-              Status:
-            </Typography>
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={statusFilter}
-              onChange={handleFilterChange}
-            >
-              <ToggleButton value="ALL">All</ToggleButton>
-              <ToggleButton value="ACTIVE">Active</ToggleButton>
-              <ToggleButton value="DISABLED">Disabled</ToggleButton>
-            </ToggleButtonGroup>
-          </Stack>
-
-          {loading && (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={18} />
-              <Typography variant="caption" color="text.secondary">
-                Updating…
-              </Typography>
-            </Stack>
-          )}
-        </Box>
-
-        {error && (
-          <Alert
-            severity="error"
-            sx={{ mb: 2 }}
-            onClose={() => setError(null)}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {/* Users */}
-        {/* <Box sx={{ width: "100%", overflowX: "auto" }}> */}
-        <Paper
+      {/*Filters and state*/}
+      <Box
         sx={{
-          maxWidth: 900,
-          mx: "auto",
-          borderRadius: 2,
-          overflow: "hidden",              // ✅ сохраняет скругления
-          border: "1px solid",
-          borderColor: "divider",
+          mb: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+          flexWrap: "wrap",
         }}
       >
-        {/* (optional) padding around the table, but NOT on the scroll container */}
-        <Box sx={{ p: 2 }}>
-          <Box
-            sx={{
-              maxHeight: 466,
-              overflow: "auto",
-              "&::-webkit-scrollbar": { width: 10, height: 10 },
-              "&::-webkit-scrollbar-track": { background: "transparent" },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "rgba(0,0,0,0.18)",
-                borderRadius: 999,
-                border: "3px solid transparent",
-                backgroundClip: "content-box",
-              },
-              "&::-webkit-scrollbar-thumb:hover": {
-                backgroundColor: "rgba(0,0,0,0.28)",
-              },
-
-              // ✅ Firefox
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(0,0,0,0.25) transparent",
-            }}
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            Status:
+          </Typography>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={statusFilter}
+            onChange={handleFilterChange}
           >
-            <Table
-              stickyHeader
-              size="small" 
-              sx={{
-                "& .MuiTableCell-root": { py: 0.8, px: 1.5, whiteSpace: "nowrap" },
-                "& .MuiTableCell-head": { fontWeight: 600 },
-              }}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
+            <ToggleButton value="ALL">All</ToggleButton>
+            <ToggleButton value="ACTIVE">Active</ToggleButton>
+            <ToggleButton value="DISABLED">Disabled</ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            sx={{ ml: 'auto' }}
+            variant="contained"
+            startIcon={<AddIcon />}
+            size="small"
+            onClick={handleOpenDialog}
+          >
+            New user
+          </Button>
+        </Stack>
 
-              <TableBody>
-                {users.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-                        No users found for the selected filter.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id} hover>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {user.firstName} {user.lastName}
-                        </Typography>
-                      </TableCell>
+        {loading && (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={18} />
+            <Typography variant="caption" color="text.secondary">
+              Updating…
+            </Typography>
+          </Stack>
+        )}
+      </Box>
 
-                      <TableCell>
-                        <Typography variant="body2">{user.email}</Typography>
-                      </TableCell>
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
 
-                      <TableCell>
-                        <Typography variant="body2">{user.role || "—"}</Typography>
-                      </TableCell>
-
-                      <TableCell>
-                        <Chip
-                          label={user.status === "ACTIVE" ? "Active" : "Disabled"}
-                          size="small"
-                          color={user.status === "ACTIVE" ? "success" : "default"}
-                          variant={user.status === "ACTIVE" ? "filled" : "outlined"}
-                          sx={{ height: 22 }} // ✅ чуть компактнее
-                        />
-                      </TableCell>
-
-                      <TableCell>
-                        <Typography variant="body2">{formatDate(user.createdAt)}</Typography>
-                      </TableCell>
-
-                      <TableCell align="right">
-                        <Tooltip
-                          title={user.status === "ACTIVE" ? "Disable user" : "Enable user"}
-                        >
-                          <IconButton size="small" onClick={() => handleToggleStatus(user)}>
-                            {user.status === "ACTIVE" ? (
-                              <BlockOutlinedIcon fontSize="small" />
-                            ) : (
-                              <CheckCircleOutlineOutlinedIcon fontSize="small" />
-                            )}
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Box>
-        </Box>
-      </Paper>
-
+    <UsersTable
+      rows={sortedUsers}
+      loading={loading}
+      error={error}
+      sortField={sortField}
+      sortOrder={sortOrder}
+      onSort={handleSort}
+      onOpenAudit={openUserAudit}
+      onToggleStatus={handleToggleStatus}
+    />
       {/* Create user dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>New user</DialogTitle>

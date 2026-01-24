@@ -2,6 +2,7 @@ package com.oleksiivlasiuk.operationshubbackend.core.users;
 
 import java.util.List;
 
+import com.oleksiivlasiuk.operationshubbackend.core.audit.AuditService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AuditService auditService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, AuditService auditService) {
         this.userRepository = userRepository;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -21,7 +24,18 @@ public class UserService {
         }
 
         User user = new User(request.email(), request.firstName(), request.lastName());
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+
+        auditService.record(
+                null, // actor позже, когда будет auth
+                "USER_CREATED",
+                "USER",
+                saved.getId(),
+                "User created: " + saved.getEmail(),
+                "{\"email\":\"" + saved.getEmail() + "\"}"
+        );
+
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -40,6 +54,15 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: id=" + id));
         user.disable();
         userRepository.save(user);
+
+        auditService.record(
+                null,
+                "USER_DISABLED",
+                "USER",
+                id,
+                "User disabled: " + user.getEmail(),
+                "{\"email\":\"" + user.getEmail() + "\"}"
+        );
     }
 
     @Transactional
@@ -48,6 +71,13 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: id=" + id));
         user.enable();
         userRepository.save(user);
+        auditService.record(
+                null,
+                "USER_ENABLED",
+                "USER",
+                id,
+                "User enabled: " + user.getEmail(),
+                "{\"email\":\"" + user.getEmail() + "\"}"
+        );
     }
-
 }
