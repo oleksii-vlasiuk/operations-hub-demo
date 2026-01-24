@@ -3,56 +3,101 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Tooltip,
   Typography,
   CircularProgress,
-  TableContainer,
 } from "@mui/material";
-import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
-import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import type { User, UserStatus, CreateUserRequest } from "../types";
 import { getUsers, createUser, disableUser, enableUser } from "../api";
-import { useNavigate } from "react-router-dom";
-import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import UsersTable from "./UsersTable";
 
 
 type StatusFilter = "ALL" | UserStatus;
 
-const formatDate = (value?: string) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString();
-};
-
 const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // state for dialog "New user"
   const [dialogOpen, setDialogOpen] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+
+  type SortOrder = "asc" | "desc";
+  type SortField = "name"; 
+
+  const parseStatus = (v: string | null): StatusFilter => {
+    if (v === "ACTIVE" || v === "DISABLED" || v === "ALL") return v;
+    return "ALL";
+    };
+
+    const parseSortField = (v: string | null): SortField => {
+    if (v === "name") return "name";
+    return "name";
+    };
+
+    const parseOrder = (v: string | null): SortOrder => {
+    if (v === "asc" || v === "desc") return v;
+    return "asc";
+  };
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() =>
+    parseStatus(searchParams.get("status"))
+  );
+
+  const [sortField, setSortField] = useState<SortField>(() =>
+    parseSortField(searchParams.get("sort"))
+  );
+
+  const [sortOrder, setSortOrder] = useState<SortOrder>(() =>
+    parseOrder(searchParams.get("order"))
+  );
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+
+    next.set("status", statusFilter);
+    next.set("sort", sortField);
+    next.set("order", sortOrder);
+
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, sortField, sortOrder]);
+
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+};
+
+  const sortedUsers = [...users].sort((a, b) => {
+    if (sortField === "name") {
+      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+
+      if (nameA < nameB) return sortOrder === "asc" ? -1 : 1;
+      if (nameA > nameB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    }
+
+    return 0;
+  });
 
   const loadUsers = async (status?: UserStatus) => {
     try {
@@ -68,12 +113,10 @@ const UsersPage = () => {
   };
 
   useEffect(() => {
-    if (statusFilter === "ALL") {
-      void loadUsers();
-    } else {
-      void loadUsers(statusFilter);
-    }
+    if (statusFilter === "ALL") void loadUsers();
+    else void loadUsers(statusFilter);
   }, [statusFilter]);
+
 
   const handleFilterChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -224,91 +267,16 @@ const UsersPage = () => {
         </Alert>
       )}
 
-      {/* Users */}
-      {/* Table */}
-      <Paper variant="outlined" sx={{ overflow: "hidden", flexGrow: 1 }}>
-        <TableContainer sx={{ height: "100%", overflowY: "auto" }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6}>
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-                      No users found for the selected filter.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow key={user.id} hover>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {user.firstName} {user.lastName}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2">{user.email}</Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2">{user.role || "—"}</Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        label={user.status === "ACTIVE" ? "Active" : "Disabled"}
-                        size="small"
-                        color={user.status === "ACTIVE" ? "success" : "default"}
-                        variant={user.status === "ACTIVE" ? "filled" : "outlined"}
-                        sx={{ height: 22 }} // ✅ чуть компактнее
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2">{formatDate(user.createdAt)}</Typography>
-                    </TableCell>
-
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                        <Tooltip title="View audit">
-                          <IconButton size="small" onClick={() => openUserAudit(user.id)}>
-                            <ReceiptLongOutlinedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip
-                          title={user.status === "ACTIVE" ? "Disable user" : "Enable user"}
-                        >
-                          <IconButton size="small" onClick={() => handleToggleStatus(user)}>
-                            {user.status === "ACTIVE" ? (
-                              <BlockOutlinedIcon fontSize="small" />
-                            ) : (
-                              <CheckCircleOutlineOutlinedIcon fontSize="small" />
-                            )}
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-
+    <UsersTable
+      rows={sortedUsers}
+      loading={loading}
+      error={error}
+      sortField={sortField}
+      sortOrder={sortOrder}
+      onSort={handleSort}
+      onOpenAudit={openUserAudit}
+      onToggleStatus={handleToggleStatus}
+    />
       {/* Create user dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>New user</DialogTitle>
