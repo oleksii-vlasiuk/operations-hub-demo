@@ -19,6 +19,8 @@ import type { User, UserStatus, CreateUserRequest } from "../types";
 import { getUsers, createUser, disableUser, enableUser } from "../api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import UsersTable from "./UsersTable";
+import { useAuth } from "../../../core/auth/AuthContext";
+import { canManageUsers } from "../../../core/auth/permissions";
 
 
 type StatusFilter = "ALL" | UserStatus;
@@ -184,6 +186,10 @@ const UsersPage = () => {
     navigate(`/audit?entityType=USER&entityId=${userId}`);
   };
 
+  const { user: currentUser } = useAuth();
+  const isAdmin = canManageUsers(currentUser?.role as any);
+
+
   return (
     <Box sx={{
       height: "100%",
@@ -236,17 +242,17 @@ const UsersPage = () => {
             <ToggleButton value="ACTIVE">Active</ToggleButton>
             <ToggleButton value="DISABLED">Disabled</ToggleButton>
           </ToggleButtonGroup>
-          <Button
-            sx={{ ml: 'auto' }}
-            variant="contained"
-            startIcon={<AddIcon />}
-            size="small"
-            onClick={handleOpenDialog}
-          >
-            New user
-          </Button>
+          {isAdmin && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              size="small"
+              onClick={handleOpenDialog}
+            >
+              New user
+            </Button>
+          )}
         </Stack>
-
         {loading && (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={18} />

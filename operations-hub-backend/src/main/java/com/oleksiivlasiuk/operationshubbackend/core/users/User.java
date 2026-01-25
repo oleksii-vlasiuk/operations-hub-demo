@@ -35,7 +35,7 @@ public class User {
     private UserStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role", nullable = false)
     private Role role;
 
     @Column(nullable = false, updatable = false)

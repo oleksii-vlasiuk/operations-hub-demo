@@ -20,6 +20,8 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import type { User } from "../types";
+import { useAuth } from "../../../core/auth/AuthContext";
+import { canManageUsers } from "../../../core/auth/permissions";
 
 type UsersTableProps = {
   rows: User[];
@@ -54,6 +56,10 @@ export default function UsersTable({
   onToggleStatus,
   height = "100%",
 }: UsersTableProps) {
+
+  const { user: currentUser } = useAuth();
+  const isAdmin = canManageUsers(currentUser?.role as any);
+
   return (
     <Paper variant="outlined" sx={{ overflow: "hidden", flexGrow: 1, height }}>
       <TableContainer sx={{ height: "100%", overflowY: "auto" }}>
@@ -149,7 +155,21 @@ export default function UsersTable({
                         </IconButton>
                       </Tooltip>
 
-                      <Tooltip title={user.status === "ACTIVE" ? "Disable user" : "Enable user"}>
+                      
+                      
+                      {isAdmin && (
+                        <Tooltip title={user.status === "ACTIVE" ? "Disable user" : "Enable user"}>
+                          <IconButton size="small" onClick={() => onToggleStatus(user)}>
+                            {user.status === "ACTIVE" ? (
+                              <BlockOutlinedIcon fontSize="small" />
+                            ) : (
+                              <CheckCircleOutlineOutlinedIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                      )}
+
+                      {/* <Tooltip title={user.status === "ACTIVE" ? "Disable user" : "Enable user"}>
                         <IconButton size="small" onClick={() => onToggleStatus(user)}>
                           {user.status === "ACTIVE" ? (
                             <BlockOutlinedIcon fontSize="small" />
@@ -157,7 +177,8 @@ export default function UsersTable({
                             <CheckCircleOutlineOutlinedIcon fontSize="small" />
                           )}
                         </IconButton>
-                      </Tooltip>
+                      </Tooltip> */}
+
                     </Stack>
                   </TableCell>
                 </TableRow>
