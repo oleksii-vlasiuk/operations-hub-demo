@@ -1,14 +1,16 @@
 package com.oleksiivlasiuk.operationshubbackend.modules.tasks;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    List<Task> findByStatus(TaskStatus status);
+    Page<Task> findByAssigneeId(Long assigneeId, Pageable pageable);
 
-    List<Task> findByAssigneeId(Long assigneeId);
+    Page<Task> findByStatusAndAssigneeId(TaskStatus status, Long assigneeId, Pageable pageable);
 
-    List<Task> findByStatusAndAssigneeId(TaskStatus status, Long assigneeId);
+    Page<Task> findByStatus(TaskStatus status, Pageable pageable);
 }
